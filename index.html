@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Richard Draggers · Ragnar</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #09090b;
+  --card: #18181b;
+  --card2: #27272a;
+  --border: #3f3f46;
+  --green: #22c55e;
+  --green-bg: #052e16;
+  --yellow: #f59e0b;
+  --yellow-bg: #1c1001;
+  --red: #f43f5e;
+  --red-bg: #1a0009;
+  --text: #fafafa;
+  --muted: #a1a1aa;
+  --dim: #52525b;
+  --brand: #f97316;
+  --admin: #a78bfa;
+  --accent: #38bdf8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 18px;
+  line-height: 1.4;
+  overscroll-behavior: none;
+}
+
+/* ── SETUP ── */
+#setup {
+  display: none;
+  min-height: 100vh;
+  padding: 24px 20px;
+  flex-direction: column;
+  gap: 16px;
+}
+#setup.show { display: flex; }
+.setup-title { font-family: 'Bebas Neue', sans-serif; font-size: 2.4rem; color: var(--brand); letter-spacing: .06em; line-height: 1; }
+.setup-sub { color: var(--muted); font-size: .95rem; }
+.setup-steps { background: var(--card); border-radius: 16px; padding: 18px; font-size: .9rem; color: var(--muted); line-height: 1.8; }
+.setup-steps a { color: var(--accent); }
+.setup-steps strong { color: var(--text); }
+label { font-size: .9rem; color: var(--muted); margin-bottom: 4px; display: block; }
+input[type=text], input[type=password], input[type=time], select {
+  width: 100%;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1rem;
+  padding: 14px 16px;
+  appearance: none;
+  -webkit-appearance: none;
+}
+input:focus, select:focus { outline: none; border-color: var(--accent); }
+input.err { border-color: var(--red); }
+.setup-err { color: var(--red); font-size: .9rem; display: none; }
+.setup-err.show { display: block; }
+
+/* ── BUTTONS ── */
+.btn {
+  display: block;
+  width: 100%;
+  border: none;
+  border-radius: 16px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 18px;
+  cursor: pointer;
+  text-align: center;
+  letter-spacing: .01em;
+  transition: opacity .12s, transform .1s;
+  user-select: none;
+}
+.btn:active { opacity: .8; transform: scale(.98); }
+.btn-brand  { background: var(--brand);  color: #000; }
+.btn-green  { background: var(--green);  color: #000; }
+.btn-red    { background: var(--red);    color: #fff; }
+.btn-admin  { background: var(--admin);  color: #000; }
+.btn-ghost  { background: var(--card2);  color: var(--text); border: 2px solid var(--border); }
+.btn-sm     { font-size: .9rem; padding: 12px 16px; border-radius: 12px; }
+.btn-xs     { font-size: .85rem; padding: 10px 14px; border-radius: 10px; width: auto; display: inline-block; }
+
+/* ── APP SHELL ── */
+#app { display: none; flex-direction: column; min-height: 100vh; }
+#app.show { display: flex; }
+
+/* ── HEADER ── */
+.header {
+  background: var(--card);
+  border-bottom: 2px solid var(--border);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.header-left { display: flex; flex-direction: column; }
+.team-name { font-family: 'Bebas Neue', sans-serif; font-size: 1.7rem; color: var(--brand); letter-spacing: .08em; line-height: 1; }
+.race-sub { font-size: .8rem; color: var(--muted); margin-top: 1px; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.clock { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--accent); letter-spacing: .04em; }
+.sync-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--dim); flex-shrink: 0; transition: background .3s; }
+.sync-dot.ok  { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.sync-dot.err { background: var(--red); }
+.sync-dot.busy { background: var(--yellow); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+
+/* ── ADMIN BAR ── */
+.admin-bar {
+  background: #1a0d2e;
+  border-bottom: 2px solid var(--admin);
+  padding: 10px 18px;
+  display: none;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.admin-bar.show { display: flex; }
+.admin-bar-label { color: var(--admin); font-weight: 700; font-size: .95rem; align-self: center; flex: 1; }
+
+/* ── ACTIVE BANNER ── */
+.active-banner {
+  margin: 14px;
+  border-radius: 20px;
+  padding: 20px 22px;
+  border: 2.5px solid;
+  position: relative;
+  overflow: hidden;
+}
+.active-banner.green  { background: var(--green-bg);  border-color: var(--green); }
+.active-banner.yellow { background: var(--yellow-bg); border-color: var(--yellow); }
+.active-banner.red    { background: var(--red-bg);    border-color: var(--red); }
+.active-banner.none   { background: var(--card);      border-color: var(--border); }
+.ab-label { font-size: .85rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
+.ab-runner { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; letter-spacing: .04em; line-height: 1; margin-bottom: 8px; }
+.active-banner.green  .ab-runner { color: var(--green); }
+.active-banner.yellow .ab-runner { color: var(--yellow); }
+.active-banner.red    .ab-runner { color: var(--red); }
+.ab-loop { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px; font-weight: 700; font-size: .95rem; }
+.ab-loop.green  { background: #14532d; color: var(--green); }
+.ab-loop.yellow { background: #78350f; color: var(--yellow); }
+.ab-loop.red    { background: #881337; color: var(--red); }
+.ab-bottom { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 14px; flex-wrap: wrap; gap: 8px; }
+.ab-eta { text-align: right; }
+.ab-eta-label { font-size: .8rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.ab-eta-time { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: .04em; color: var(--text); }
+.ab-drift { font-size: .85rem; font-weight: 700; }
+.ab-drift.ahead  { color: var(--green); }
+.ab-drift.behind { color: var(--red); }
+.ab-next { font-size: .9rem; color: var(--muted); }
+.ab-next strong { color: var(--text); }
+
+/* ── PROGRESS ── */
+.progress-section { padding: 0 14px 14px; }
+.progress-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.progress-label { font-weight: 700; font-size: 1rem; }
+.progress-count { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--accent); letter-spacing: .04em; }
+.progress-track { height: 10px; background: var(--card2); border-radius: 999px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--green), var(--accent)); border-radius: 999px; transition: width .5s ease; }
+
+/* ── MARK FAB ── */
+.fab-wrap { padding: 0 14px 14px; }
+
+/* ── TABS ── */
+.tabs { display: flex; border-bottom: 2px solid var(--border); background: var(--card); }
+.tab { flex: 1; background: none; border: none; color: var(--muted); font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 1rem; padding: 16px; border-bottom: 3px solid transparent; margin-bottom: -2px; cursor: pointer; transition: all .15s; }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── RUNNER CARDS ── */
+.runners-list { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.runner-card { background: var(--card); border: 2px solid var(--border); border-radius: 16px; padding: 16px; }
+.runner-card.running { border-color: var(--green); box-shadow: 0 0 0 3px #22c55e20; }
+.rc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.rc-name { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: .04em; line-height: 1; }
+.rc-badge { font-weight: 700; font-size: .85rem; padding: 4px 10px; border-radius: 8px; }
+.rc-badge.running { background: #052e16; color: var(--green); }
+.rc-badge.done    { background: var(--card2); color: var(--muted); }
+.rc-badge.waiting { background: var(--card2); color: var(--muted); }
+.rc-chips { display: flex; gap: 8px; margin-bottom: 10px; }
+.chip {
+  width: 100%; text-align: center; padding: 10px 4px; border-radius: 10px;
+  font-weight: 700; font-size: .85rem; border: 2px solid transparent;
+}
+.chip-wrap { flex: 1; display: flex; flex-direction: column; align-items: stretch; gap: 5px; }
+.chip-time { text-align: center; font-size: .78rem; color: var(--muted); font-weight: 500; line-height: 1.2; }
+.chip-time.done-time { color: var(--green); }
+.chip-time.active-time { color: var(--accent); font-weight: 700; }
+.chip.green.pending  { background: #04140a; border-color: #14532d; color: #14532d; }
+.chip.green.active   { background: var(--green-bg); border-color: var(--green); color: var(--green); animation: chipg 2s infinite; }
+.chip.green.done     { background: #14532d; border-color: var(--green); color: var(--green); }
+.chip.yellow.pending { background: #0d0900; border-color: #78350f; color: #78350f; }
+.chip.yellow.active  { background: var(--yellow-bg); border-color: var(--yellow); color: var(--yellow); animation: chipy 2s infinite; }
+.chip.yellow.done    { background: #78350f; border-color: var(--yellow); color: var(--yellow); }
+.chip.red.pending    { background: #0a0005; border-color: #881337; color: #881337; }
+.chip.red.active     { background: var(--red-bg); border-color: var(--red); color: var(--red); animation: chipr 2s infinite; }
+.chip.red.done       { background: #881337; border-color: var(--red); color: var(--red); }
+@keyframes chipg { 0%,100%{box-shadow:0 0 0 0 #22c55e50}50%{box-shadow:0 0 0 6px #22c55e15} }
+@keyframes chipy { 0%,100%{box-shadow:0 0 0 0 #f59e0b50}50%{box-shadow:0 0 0 6px #f59e0b15} }
+@keyframes chipr { 0%,100%{box-shadow:0 0 0 0 #f43f5e50}50%{box-shadow:0 0 0 6px #f43f5e15} }
+.rc-next { font-size: .9rem; color: var(--muted); }
+.rc-next strong { color: var(--accent); }
+
+/* ── SCHEDULE ── */
+.schedule-list { padding: 14px; display: flex; flex-direction: column; gap: 8px; padding-bottom: 40px; }
+.sched-card { background: var(--card); border: 2px solid var(--border); border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px; }
+.sched-card.current { border-color: var(--accent); box-shadow: 0 0 0 3px #38bdf820; }
+.sched-card.past { opacity: .4; }
+.sched-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--dim); min-width: 36px; line-height: 1; }
+.sched-card.current .sched-num { color: var(--accent); }
+.loop-circle { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; }
+.loop-circle.green  { background: var(--green); }
+.loop-circle.yellow { background: var(--yellow); }
+.loop-circle.red    { background: var(--red); }
+.sched-info { flex: 1; min-width: 0; }
+.sched-runner { font-weight: 700; font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sched-time { font-size: .9rem; color: var(--muted); margin-top: 2px; }
+.sched-time.adj { color: var(--accent); }
+.sched-action { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; flex-shrink: 0; }
+.done-check { font-size: 1.4rem; color: var(--green); }
+.done-at { font-size: .8rem; color: var(--muted); text-align: right; }
+
+/* ── OVERLAYS ── */
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 200; align-items: flex-end; justify-content: center; padding: 0; backdrop-filter: blur(6px); }
+.overlay.open { display: flex; }
+.sheet { background: var(--card); border-radius: 24px 24px 0 0; width: 100%; max-width: 560px; padding: 10px 20px 40px; max-height: 90vh; overflow-y: auto; }
+.sheet-handle { width: 48px; height: 5px; background: var(--border); border-radius: 999px; margin: 0 auto 20px; }
+.sheet h2 { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: .04em; margin-bottom: 6px; }
+.sheet-sub { color: var(--muted); font-size: .9rem; margin-bottom: 20px; }
+.sheet-stack { display: flex; flex-direction: column; gap: 10px; }
+.confirm-box { background: var(--card2); border-radius: 14px; padding: 18px; margin-bottom: 16px; }
+.confirm-box .clabel { font-size: .8rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+.confirm-box .cval { font-weight: 700; font-size: 1.1rem; }
+.confirm-box .csub { font-size: .9rem; color: var(--muted); margin-top: 4px; }
+.section-divider { height: 2px; background: var(--border); margin: 20px 0; border-radius: 999px; }
+.section-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--admin); letter-spacing: .06em; margin-bottom: 12px; }
+.preview-box { background: var(--card2); border-radius: 12px; padding: 14px 16px; font-size: .95rem; color: var(--muted); line-height: 1.7; margin-bottom: 12px; }
+.preview-box strong { color: var(--text); }
+.preview-box .conflict { color: var(--red); font-weight: 700; }
+.swap-log-wrap { margin-top: 6px; }
+.swap-log-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); gap: 10px; }
+.swap-log-item:last-child { border-bottom: none; }
+.swap-log-desc { font-size: .9rem; color: var(--muted); flex: 1; }
+.swap-log-desc strong { color: var(--text); }
+.undo-btn { background: none; border: 2px solid var(--red); color: var(--red); border-radius: 10px; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: .85rem; padding: 8px 14px; cursor: pointer; flex-shrink: 0; }
+.field-label { font-size: .9rem; color: var(--muted); margin-bottom: 6px; margin-top: 12px; }
+.merr { color: var(--red); font-size: .9rem; display: none; margin-top: 4px; }
+.merr.show { display: block; }
+.select-wrap { position: relative; }
+.select-wrap::after { content: '▾'; position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; font-size: 1rem; }
+
+/* ── PIN SCREEN ── */
+.pin-overlay { display: none; position: fixed; inset: 0; z-index: 300; background: var(--bg); align-items: center; justify-content: center; padding: 24px; }
+.pin-overlay.open { display: flex; }
+.pin-card { background: var(--card); border-radius: 24px; padding: 32px 24px; width: 100%; max-width: 360px; text-align: center; }
+.pin-title { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: .06em; margin-bottom: 6px; }
+.pin-sub { color: var(--muted); font-size: .95rem; margin-bottom: 24px; }
+.pin-input { text-align: center; font-size: 1.5rem; letter-spacing: .4em; }
+</style>
+</head>
+<body>
+
+<!-- ══ SETUP ══ -->
+<div id="setup" class="show">
+  <div class="setup-title">Richard Draggers</div>
+  <div class="setup-sub">Ragnar Trail Race Tracker</div>
+  <div class="setup-steps">
+    Connect to <strong>JSONBin.io</strong> for live team sync.<br><br>
+    1. Go to <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> → free account<br>
+    2. Create Bin → paste <strong>{}</strong> → save<br>
+    3. Copy the <strong>Bin ID</strong> from the URL<br>
+    4. Copy your <strong>Access Key</strong> from API Keys
+  </div>
+  <div>
+    <label>Bin ID</label>
+    <input type="text" id="setupBinId" placeholder="64a1f3b7..." autocomplete="off">
+  </div>
+  <div>
+    <label>Access Key</label>
+    <input type="password" id="setupApiKey" placeholder="$2a$10$..." autocomplete="off">
+  </div>
+  <div class="setup-err" id="setupErr"></div>
+  <button class="btn btn-brand" onclick="saveSetup()">Connect & Start →</button>
+  <button class="btn btn-ghost" onclick="launchReadOnly()">View Only</button>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="app">
+  <div id="toast" style="display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:#000;font-weight:700;font-size:1rem;padding:12px 24px;border-radius:999px;z-index:999;white-space:nowrap;box-shadow:0 4px 20px #00000060;transition:opacity .3s;"></div>
+
+  <!-- Admin bar -->
+  <div class="admin-bar" id="adminBar">
+    <span class="admin-bar-label">⚙ Admin Mode</span>
+    <button class="btn btn-admin btn-xs" onclick="openSwapModal()">Swap Runners</button>
+    <button class="btn btn-admin btn-xs" onclick="openEditTimeModal()">Edit Time</button>
+    <button class="btn btn-ghost btn-xs" onclick="lockAdmin()">Lock</button>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="team-name">Richard Draggers</div>
+      <div class="race-sub">8 Runners · 24 Laps</div>
+    </div>
+    <div class="header-right">
+      <div class="clock" id="clock">--:--</div>
+      <div class="sync-dot" id="syncDot" title="Sync status"></div>
+      <button class="btn btn-ghost btn-xs" id="adminBtn" onclick="handleAdmin()">⚙</button>
+    </div>
+  </div>
+
+  <!-- Active runner -->
+  <div class="active-banner none" id="activeBanner">
+    <div class="ab-label">Now Running</div>
+    <div class="ab-runner" id="abRunner">—</div>
+    <div id="abLoop"></div>
+    <div class="ab-bottom">
+      <div id="abNext"></div>
+      <div class="ab-eta" id="abEta"></div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-section">
+    <div class="progress-row">
+      <div class="progress-label">Race Progress</div>
+      <div class="progress-count" id="progCount">0 / 24</div>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Mark button -->
+  <div class="fab-wrap">
+    <button class="btn btn-green" onclick="startMarkFlow()">✓ Mark Lap Done</button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('runners')">Runners</button>
+    <button class="tab" onclick="switchTab('schedule')">Schedule</button>
+  </div>
+
+  <div id="tab-runners" class="tab-content active">
+    <div class="runners-list" id="runnerList"></div>
+  </div>
+
+  <div id="tab-schedule" class="tab-content">
+    <div class="schedule-list" id="schedList"></div>
+  </div>
+
+</div>
+
+<!-- ══ MARK STEP 1 ══ -->
+<div class="overlay" id="markStep1">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Which lap finished?</h2>
+    <div class="sheet-sub">Select the lap that was just completed.</div>
+    <div class="select-wrap" style="margin-bottom:16px">
+      <select id="markSelect"></select>
+    </div>
+    <div class="sheet-stack">
+      <button class="btn btn-green" onclick="goToMarkStep2()">Next →</button>
+      <button class="btn btn-ghost" onclick="closeOverlay('markStep1')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MARK STEP 2 ══ -->
+<div class="overlay" id="markStep2">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Are you sure?</h2>
+    <div class="sheet-sub">This records the finish time and updates all ETAs.</div>
+    <div class="confirm-box" id="markConfirmBox"></div>
+    <div class="sheet-stack">
+      <button class="btn btn-green" onclick="confirmMark()">Yes — Mark Complete ✓</button>
+      <button class="btn btn-ghost" onclick="backToMarkStep1()">← Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ UNMARK ══ -->
+<div class="overlay" id="unmarkModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Unmark this lap?</h2>
+    <div class="sheet-sub">Removes the completion record and recalculates ETAs.</div>
+    <div class="confirm-box" id="unmarkConfirmBox"></div>
+    <div class="sheet-stack">
+      <button class="btn btn-red" onclick="confirmUnmark()">Yes — Unmark</button>
+      <button class="btn btn-ghost" onclick="closeOverlay('unmarkModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ EDIT TIME ══ -->
+<div class="overlay" id="editTimeModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Edit Finish Time</h2>
+    <div class="sheet-sub">Admin only — adjusts the recorded finish time.</div>
+    <div class="field-label">Lap</div>
+    <div class="select-wrap" style="margin-bottom:12px">
+      <select id="editLapSel" onchange="updateEditTime()"></select>
+    </div>
+    <div class="field-label">Finish Time</div>
+    <input type="time" id="editTimeIn" step="60" style="margin-bottom:16px">
+    <div class="merr" id="editErr">Please select a completed lap.</div>
+    <div class="sheet-stack">
+      <button class="btn btn-admin" onclick="confirmEditTime()">Save Time</button>
+      <button class="btn btn-ghost" onclick="closeOverlay('editTimeModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PIN ══ -->
+<div class="pin-overlay" id="pinModal">
+  <div class="pin-card">
+    <div class="pin-title">Admin PIN</div>
+    <div class="pin-sub">Enter your PIN to unlock admin features</div>
+    <input class="pin-input" type="password" id="pinInput" placeholder="••••" maxlength="12"
+      onkeydown="if(event.key==='Enter')confirmPin()" style="margin-bottom:16px">
+    <div class="merr" id="pinErr" style="margin-bottom:12px">Incorrect PIN</div>
+    <div class="sheet-stack">
+      <button class="btn btn-admin" onclick="confirmPin()">Unlock</button>
+      <button class="btn btn-ghost" onclick="closeOverlay('pinModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SWAP PANEL ══ -->
+<div class="overlay" id="swapModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Swap Runners</h2>
+    <div class="sheet-sub">Admin only. Syncs to the team immediately.</div>
+
+    <!-- Wholesale -->
+    <div class="section-title">① All 3 Legs</div>
+    <div class="field-label">Swap all legs between</div>
+    <div style="display:grid;grid-template-columns:1fr 40px 1fr;gap:8px;align-items:center;margin-bottom:10px">
+      <div class="select-wrap"><select id="wsA" onchange="updateWSPreview()"></select></div>
+      <div style="text-align:center;font-size:1.4rem;color:var(--muted)">⇄</div>
+      <div class="select-wrap"><select id="wsB" onchange="updateWSPreview()"></select></div>
+    </div>
+    <div class="preview-box" id="wsPreview">Select two runners</div>
+    <button class="btn btn-admin btn-sm" onclick="confirmWholesaleSwap()" style="margin-bottom:0">Swap All Legs</button>
+
+    <div class="section-divider"></div>
+
+    <!-- Single leg -->
+    <div class="section-title">② Single Leg</div>
+    <div class="field-label">Reassign this lap</div>
+    <div class="select-wrap" style="margin-bottom:12px">
+      <select id="slLap" onchange="populateSLTargets();updateSLPreview()"></select>
+    </div>
+    <div class="field-label">Give it to</div>
+    <div class="select-wrap" style="margin-bottom:10px">
+      <select id="slTarget" onchange="updateSLPreview()"></select>
+    </div>
+    <div class="preview-box" id="slPreview">Select a lap above</div>
+    <button class="btn btn-admin btn-sm" onclick="confirmSingleLegSwap()" style="margin-bottom:0">Reassign Leg</button>
+
+    <!-- Log -->
+    <div id="swapLogWrap"></div>
+
+    <div style="margin-top:20px">
+      <button class="btn btn-ghost" onclick="closeOverlay('swapModal')">Done</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ══ CONFIG ══
+const ADMIN_PIN    = '2025';
+const RACE_START   = 13 * 60; // 1pm in absolute minutes
+const POLL_MS      = 20000;
+const JSONBIN_BASE = 'https://api.jsonbin.io/v3/b';
+
+// ══ BASE SCHEDULE ══
+const BASE = [
+  {lap:1, slot:"Chris",    loop:"green",  dur:50},
+  {lap:2, slot:"Matt",     loop:"yellow", dur:60},
+  {lap:3, slot:"Sydney",   loop:"red",    dur:70},
+  {lap:4, slot:"Matt",     loop:"green",  dur:50},
+  {lap:5, slot:"Chris",    loop:"yellow", dur:60},
+  {lap:6, slot:"Caroline", loop:"red",    dur:70},
+  {lap:7, slot:"Courtney", loop:"green",  dur:50},
+  {lap:8, slot:"Chase",    loop:"yellow", dur:60},
+  {lap:9, slot:"Grant",    loop:"red",    dur:70},
+  {lap:10,slot:"Savannah", loop:"green",  dur:50},
+  {lap:11,slot:"Caroline", loop:"yellow", dur:60},
+  {lap:12,slot:"Courtney", loop:"red",    dur:70},
+  {lap:13,slot:"Chase",    loop:"green",  dur:50},
+  {lap:14,slot:"Sydney",   loop:"yellow", dur:60},
+  {lap:15,slot:"Savannah", loop:"red",    dur:70},
+  {lap:16,slot:"Grant",    loop:"green",  dur:50},
+  {lap:17,slot:"Courtney", loop:"yellow", dur:60},
+  {lap:18,slot:"Matt",     loop:"red",    dur:70},
+  {lap:19,slot:"Caroline", loop:"green",  dur:50},
+  {lap:20,slot:"Savannah", loop:"yellow", dur:60},
+  {lap:21,slot:"Chris",    loop:"red",    dur:70},
+  {lap:22,slot:"Sydney",   loop:"green",  dur:50},
+  {lap:23,slot:"Grant",    loop:"yellow", dur:60},
+  {lap:24,slot:"Chase",    loop:"red",    dur:70},
+];
+const ALL_SLOTS = ["Chris","Matt","Courtney","Savannah","Chase","Sydney","Grant","Caroline"];
+
+// ══ STATE ══
+let binId='', apiKey='', readOnly=false, adminMode=false;
+let pollTimer=null;
+let pendingMarkLap=null, pendingUnmarkLap=null;
+let state = {doneLaps:{}, nameMap:{}, legMap:{}, swapLog:[]};
+
+// ══ SCHEDULE COMPUTATION ══
+function effSlot(lap){ return state.legMap[lap] || BASE[lap-1].slot; }
+function effName(slot){ return state.nameMap[slot] || slot; }
+
+function buildSched(){
+  let cursor = RACE_START;
+  return BASE.map(b => {
+    const slot = effSlot(b.lap);
+    const s = {...b, slot, runner: effName(slot)};
+    s.startAbs = cursor;
+    const done = state.doneLaps[b.lap];
+    if(done){ s.endAbs = done.absMins; s.isDone = true; }
+    else { s.endAbs = cursor + b.dur; s.isDone = false; }
+    cursor = s.endAbs;
+    return s;
+  });
+}
+
+function runnerLegs(slot){
+  return BASE.map(b=>({...b,slot:effSlot(b.lap)})).filter(b=>b.slot===slot);
+}
+
+// ══ SETUP ══
+function loadCreds(){
+  binId  = localStorage.getItem('rdrBinId')  || '';
+  apiKey = localStorage.getItem('rdrApiKey') || '';
+}
+
+async function saveSetup(){
+  const bid = document.getElementById('setupBinId').value.trim();
+  const key = document.getElementById('setupApiKey').value.trim();
+  const err = document.getElementById('setupErr');
+  err.classList.remove('show');
+  if(!bid||!key){ err.textContent='Both fields required.'; err.classList.add('show'); return; }
+  try {
+    const r = await fetch(`${JSONBIN_BASE}/${bid}/latest`,{headers:{'X-Access-Key':key}});
+    if(!r.ok) throw new Error(r.status);
+    const data = await r.json();
+    if(!data.record?.doneLaps){
+      await doPush({doneLaps:{},nameMap:{},legMap:{},swapLog:[]},bid,key);
+    } else {
+      state = {doneLaps:{},nameMap:{},legMap:{},swapLog:[],...data.record};
+    }
+    localStorage.setItem('rdrBinId',bid);
+    localStorage.setItem('rdrApiKey',key);
+    binId=bid; apiKey=key;
+    launch();
+  } catch(e){ err.textContent='Connection failed — check credentials.'; err.classList.add('show'); }
+}
+
+function launchReadOnly(){ readOnly=true; launch(); }
+
+function launch(){
+  document.getElementById('setup').classList.remove('show');
+  document.getElementById('setup').style.display='none';
+  document.getElementById('app').style.display='block';
+  render();
+  if(!readOnly){ startPoll(); }
+  else { setSyncStatus('err'); }
+}
+
+// ══ SYNC ══
+function setSyncStatus(s){
+  document.getElementById('syncDot').className='sync-dot'+(s?' '+s:'');
+}
+
+async function doPush(s,bid,key){
+  bid=bid||binId; key=key||apiKey;
+  const r=await fetch(`${JSONBIN_BASE}/${bid}`,{method:'PUT',
+    headers:{'Content-Type':'application/json','X-Access-Key':key},
+    body:JSON.stringify(s||state)});
+  if(!r.ok) throw new Error(r.status);
+}
+
+async function doPull(){
+  if(!binId||!apiKey) return;
+  setSyncStatus('busy');
+  try {
+    const r=await fetch(`${JSONBIN_BASE}/${binId}/latest`,{headers:{'X-Access-Key':apiKey}});
+    if(!r.ok) throw new Error(r.status);
+    const data=await r.json();
+    state={doneLaps:{},nameMap:{},legMap:{},swapLog:[],...data.record};
+    render();
+    setSyncStatus('ok');
+  } catch(e){ setSyncStatus('err'); }
+}
+
+async function syncNow(){ clearInterval(pollTimer); await doPull(); startPoll(); }
+function startPoll(){ clearInterval(pollTimer); doPull(); pollTimer=setInterval(doPull,POLL_MS); }
+
+async function saveState(){
+  setSyncStatus('busy');
+  try{ await doPush(); setSyncStatus('ok'); }
+  catch(e){ setSyncStatus('err'); }
+}
+
+// ══ RENDER ══
+function fmt(abs){
+  const h=Math.floor(abs/60)%24, m=Math.round(abs%60);
+  return`${h%12||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`;
+}
+function cap(s){ return s[0].toUpperCase()+s.slice(1); }
+function nowAbs(){ const n=new Date(); return n.getHours()*60+n.getMinutes()+n.getSeconds()/60; }
+
+function render(){
+  const sched = buildSched();
+  const cur   = sched.find(s=>!s.isDone)||null;
+  const nxt   = cur?sched.find(s=>!s.isDone&&s.lap>cur.lap)||null:null;
+
+  // Active banner
+  const banner = document.getElementById('activeBanner');
+  const abRunner=document.getElementById('abRunner');
+  const abLoop=document.getElementById('abLoop');
+  const abEta=document.getElementById('abEta');
+  const abNext=document.getElementById('abNext');
+
+  if(!cur){
+    banner.className='active-banner none';
+    abRunner.textContent='Race Complete 🎉';
+    abLoop.innerHTML=''; abEta.innerHTML=''; abNext.innerHTML='';
+  } else {
+    banner.className=`active-banner ${cur.loop}`;
+    abRunner.textContent=cur.runner;
+    abLoop.innerHTML=`<div class="ab-loop ${cur.loop}">▶ ${cap(cur.loop)} Loop</div>`;
+    // drift
+    let origEnd=RACE_START;
+    for(const b of BASE){origEnd+=b.dur;if(b.lap===cur.lap)break;}
+    const drift=Math.round(cur.endAbs-origEnd);
+    let driftHtml='';
+    if(Math.abs(drift)>=2){
+      const cls=drift>0?'behind':'ahead';
+      driftHtml=`<div class="ab-drift ${cls}">${drift>0?'+':''}${drift}m ${cls}</div>`;
+    }
+    abEta.innerHTML=`<div class="ab-eta-label">Est. Finish</div><div class="ab-eta-time">${fmt(cur.endAbs)}</div>${driftHtml}`;
+    abNext.innerHTML=nxt?`<div class="ab-next">Next: <strong>${nxt.runner}</strong></div>`:'';
+  }
+
+  // Progress
+  const done=sched.filter(s=>s.isDone).length;
+  document.getElementById('progCount').textContent=`${done} / 24`;
+  document.getElementById('progFill').style.width=Math.round(done/24*100)+'%';
+
+  // Runner cards
+  document.getElementById('runnerList').innerHTML=ALL_SLOTS.map(slot=>{
+    const name=effName(slot);
+    const myLaps=sched.filter(s=>s.slot===slot);
+    const isRun=cur?.slot===slot;
+    const allDone=myLaps.every(s=>s.isDone);
+    const dc=myLaps.filter(s=>s.isDone).length;
+    const sTxt=allDone?'Done ✓':isRun?'Running':'Waiting';
+    const sCls=allDone?'done':isRun?'running':'waiting';
+    const chips=myLaps.slice().sort((a,b)=>a.lap-b.lap).map(l=>{
+      let st='pending';
+      if(l.isDone) st='done';
+      else if(isRun&&cur?.loop===l.loop) st='active';
+      const icon=st==='done'?'✓ ':st==='active'?'▶ ':'';
+      const timeCls=st==='done'?'done-time':st==='active'?'active-time':'';
+      const timeStr=st==='done'?fmt(l.endAbs):fmt(l.startAbs);
+      return`<div class="chip-wrap">
+        <div class="chip ${l.loop} ${st}">${icon}${cap(l.loop)}</div>
+        <div class="chip-time ${timeCls}">${timeStr}</div>
+      </div>`;
+    }).join('');
+    const nl=myLaps.find(s=>!s.isDone);
+    return`<div class="runner-card ${isRun?'running':''}">
+      <div class="rc-top">
+        <div class="rc-name">${name}</div>
+        <div class="rc-badge ${sCls}">${sTxt}</div>
+      </div>
+      <div class="rc-chips">${chips}</div>
+      ${nl&&!isRun?`<div class="rc-next">Next: <strong>${fmt(nl.startAbs)}</strong> · ${cap(nl.loop)}</div>`:''}
+      <div style="font-size:.85rem;color:var(--muted);margin-top:4px">${dc}/3 loops done</div>
+    </div>`;
+  }).join('');
+
+  // Schedule
+  const origStarts={}; let oc=RACE_START;
+  BASE.forEach(b=>{origStarts[b.lap]=oc;oc+=b.dur;});
+
+  document.getElementById('schedList').innerHTML=sched.map(s=>{
+    const isCur=!s.isDone&&s.lap===cur?.lap;
+    const cls=s.isDone?'past':isCur?'current':'';
+    const adj=!s.isDone&&Math.abs(s.startAbs-origStarts[s.lap])>=1;
+    let action;
+    if(s.isDone){
+      action=`<div>
+        <div class="done-check">✓</div>
+        <div class="done-at">${fmt(s.endAbs)}</div>
+        <button class="btn btn-ghost btn-xs" style="margin-top:6px;border-color:var(--red);color:var(--red)" onclick="startUnmarkFlow(${s.lap})">Unmark</button>
+        ${adminMode?`<button class="btn btn-ghost btn-xs" style="margin-top:4px;border-color:var(--admin);color:var(--admin)" onclick="openEditTimeForLap(${s.lap})">Edit</button>`:''}
+      </div>`;
+    } else {
+      action=`<button class="btn btn-green btn-xs" onclick="startMarkFlowForLap(${s.lap})">Mark</button>`;
+    }
+    return`<div class="sched-card ${cls}">
+      <div class="sched-num">${s.lap}</div>
+      <div class="loop-circle ${s.loop}"></div>
+      <div class="sched-info">
+        <div class="sched-runner">${s.runner}</div>
+        <div class="sched-time ${adj?'adj':''}">${fmt(s.startAbs)} → ${fmt(s.endAbs)}</div>
+      </div>
+      ${action}
+    </div>`;
+  }).join('');
+}
+
+// ══ CLOCK ══
+function tick(){
+  const n=new Date();
+  let h=n.getHours(),m=n.getMinutes();
+  const ap=h>=12?'PM':'AM'; h=h%12||12;
+  document.getElementById('clock').textContent=`${h}:${String(m).padStart(2,'0')} ${ap}`;
+}
+setInterval(tick,1000); tick();
+setInterval(render,30000);
+
+// ══ MARK — 2 step ══
+function startMarkFlow(){ startMarkFlowForLap(null); }
+function startMarkFlowForLap(pre){
+  const sched=buildSched();
+  const sel=document.getElementById('markSelect');
+  sel.innerHTML=sched.filter(s=>!s.isDone)
+    .map(s=>`<option value="${s.lap}"${s.lap===pre?' selected':''}>${s.lap}. ${s.runner} · ${cap(s.loop)}</option>`)
+    .join('');
+  closeOverlay('markStep2');
+  openOverlay('markStep1');
+}
+function goToMarkStep2(){
+  const lapNum=+document.getElementById('markSelect').value;
+  if(!lapNum) return;
+  pendingMarkLap=lapNum;
+  const s=buildSched().find(s=>s.lap===lapNum);
+  const now=new Date();
+  document.getElementById('markConfirmBox').innerHTML=`
+    <div class="clabel">Lap to mark complete</div>
+    <div class="cval">Lap ${s.lap} — ${s.runner}</div>
+    <div class="csub">${cap(s.loop)} Loop · Est. finish ${fmt(s.endAbs)}</div>
+    <div class="csub" style="color:var(--green);margin-top:6px">Recording time: ${now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>`;
+  closeOverlay('markStep1');
+  openOverlay('markStep2');
+}
+function backToMarkStep1(){ closeOverlay('markStep2'); openOverlay('markStep1'); }
+async function confirmMark(){
+  if(readOnly){alert('View-only mode.');return;}
+  state.doneLaps[pendingMarkLap]={absMins:nowAbs()};
+  pendingMarkLap=null;
+  closeOverlay('markStep2');
+  render();
+  await saveState();
+}
+
+// ══ UNMARK ══
+function startUnmarkFlow(lapNum){
+  pendingUnmarkLap=lapNum;
+  const s=buildSched().find(s=>s.lap===lapNum);
+  document.getElementById('unmarkConfirmBox').innerHTML=`
+    <div class="clabel">Lap to unmark</div>
+    <div class="cval">Lap ${s.lap} — ${s.runner}</div>
+    <div class="csub">${cap(s.loop)} Loop · Completed at ${fmt(s.endAbs)}</div>`;
+  openOverlay('unmarkModal');
+}
+async function confirmUnmark(){
+  if(readOnly){alert('View-only mode.');return;}
+  delete state.doneLaps[pendingUnmarkLap];
+  pendingUnmarkLap=null;
+  closeOverlay('unmarkModal');
+  render();
+  await saveState();
+}
+
+// ══ ADMIN ══
+function handleAdmin(){
+  if(adminMode){lockAdmin();return;}
+  document.getElementById('pinInput').value='';
+  document.getElementById('pinInput').classList.remove('err');
+  document.getElementById('pinErr').classList.remove('show');
+  openOverlay('pinModal');
+  setTimeout(()=>document.getElementById('pinInput').focus(),200);
+}
+function confirmPin(){
+  if(document.getElementById('pinInput').value===ADMIN_PIN){
+    adminMode=true;
+    document.getElementById('adminBtn').textContent='⚙ ON';
+    document.getElementById('adminBtn').style.borderColor='var(--admin)';
+    document.getElementById('adminBtn').style.color='var(--admin)';
+    document.getElementById('adminBar').classList.add('show');
+    closeOverlay('pinModal');
+    render();
+  } else {
+    document.getElementById('pinErr').classList.add('show');
+    document.getElementById('pinInput').classList.add('err');
+    document.getElementById('pinInput').value='';
+  }
+}
+function lockAdmin(){
+  adminMode=false;
+  document.getElementById('adminBtn').textContent='⚙';
+  document.getElementById('adminBtn').style.borderColor='';
+  document.getElementById('adminBtn').style.color='';
+  document.getElementById('adminBar').classList.remove('show');
+  render();
+}
+
+// ══ EDIT TIME ══
+function openEditTimeModal(){
+  if(!adminMode) return;
+  const sched=buildSched();
+  const done=sched.filter(s=>s.isDone);
+  if(!done.length){alert('No completed laps yet.');return;}
+  document.getElementById('editLapSel').innerHTML=done
+    .map(s=>`<option value="${s.lap}">${s.lap}. ${s.runner} · ${cap(s.loop)}</option>`).join('');
+  updateEditTime();
+  document.getElementById('editErr').classList.remove('show');
+  openOverlay('editTimeModal');
+}
+function openEditTimeForLap(lapNum){
+  if(!adminMode) return;
+  const sched=buildSched();
+  const done=sched.filter(s=>s.isDone);
+  document.getElementById('editLapSel').innerHTML=done
+    .map(s=>`<option value="${s.lap}"${s.lap===lapNum?' selected':''}>${s.lap}. ${s.runner} · ${cap(s.loop)}</option>`).join('');
+  updateEditTime();
+  openOverlay('editTimeModal');
+}
+function updateEditTime(){
+  const lapNum=+document.getElementById('editLapSel').value;
+  if(!lapNum||!state.doneLaps[lapNum]) return;
+  const abs=state.doneLaps[lapNum].absMins;
+  const h=Math.floor(abs/60)%24, m=Math.round(abs%60);
+  document.getElementById('editTimeIn').value=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+async function confirmEditTime(){
+  const lapNum=+document.getElementById('editLapSel').value;
+  const val=document.getElementById('editTimeIn').value;
+  if(!lapNum||!val){document.getElementById('editErr').classList.add('show');return;}
+  const [hh,mm]=val.split(':').map(Number);
+  state.doneLaps[lapNum]={absMins:hh*60+mm};
+  closeOverlay('editTimeModal');
+  render();
+  await saveState();
+}
+
+function showToast(msg, color='#22c55e'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.background=color; t.style.opacity='1'; t.style.display='block';
+  setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.style.display='none',300); },2500);
+}
+
+// ══ SWAP PANEL ══
+function openSwapModal(){
+  if(!adminMode) return;
+  const opts=ALL_SLOTS.map(slot=>{
+    const n=effName(slot);
+    return`<option value="${slot}">${n!==slot?`${n} (${slot})`:n}</option>`;
+  }).join('');
+  ['wsA','wsB'].forEach(id=>document.getElementById(id).innerHTML=opts);
+  document.getElementById('wsB').selectedIndex=1;
+  updateWSPreview();
+  const sched=buildSched();
+  document.getElementById('slLap').innerHTML=sched.filter(s=>!s.isDone)
+    .map(s=>`<option value="${s.lap}">${s.lap}. ${s.runner} · ${cap(s.loop)}</option>`).join('');
+  populateSLTargets(); updateSLPreview(); renderSwapLog();
+  openOverlay('swapModal');
+}
+
+function updateWSPreview(){
+  const sA=document.getElementById('wsA').value;
+  const sB=document.getElementById('wsB').value;
+  const nA=effName(sA), nB=effName(sB);
+  const el=document.getElementById('wsPreview');
+  if(sA===sB){el.innerHTML='<span style="color:var(--red)">Pick two different runners</span>';return;}
+  const lA=runnerLegs(sA).map(b=>`Lap ${b.lap}`).join(', ');
+  const lB=runnerLegs(sB).map(b=>`Lap ${b.lap}`).join(', ');
+  el.innerHTML=`<strong>${nA}</strong> gets ${lB}<br><strong>${nB}</strong> gets ${lA}`;
+}
+
+async function confirmWholesaleSwap(){
+  const sA=document.getElementById('wsA').value;
+  const sB=document.getElementById('wsB').value;
+  if(sA===sB) return;
+  const nA=effName(sA), nB=effName(sB);
+  state.nameMap[sA]=nB; state.nameMap[sB]=nA;
+  logSwap(`${nA} ⇄ ${nB} — all legs`);
+  render(); refreshWSSelects(); renderSwapLog();
+  showToast(`✓ Swapped ${nA} ⇄ ${nB}`);
+  await saveState();
+}
+
+function populateSLTargets(){
+  const lapNum=+document.getElementById('slLap').value;
+  if(!lapNum) return;
+  const curSlot=effSlot(lapNum);
+  const color=BASE[lapNum-1].loop;
+  document.getElementById('slTarget').innerHTML=ALL_SLOTS.filter(s=>s!==curSlot).map(slot=>{
+    const name=effName(slot);
+    const theirLeg=runnerLegs(slot).find(b=>b.loop===color);
+    const isDone=theirLeg&&state.doneLaps[theirLeg.lap];
+    return`<option value="${slot}">${name} — gives Lap ${theirLeg?.lap}${isDone?' ⚠':''}  </option>`;
+  }).join('');
+  updateSLPreview();
+}
+
+function updateSLPreview(){
+  const lapNum=+document.getElementById('slLap').value;
+  if(!lapNum){document.getElementById('slPreview').textContent='Select a lap above';return;}
+  const curSlot=effSlot(lapNum);
+  const curName=effName(curSlot);
+  const color=BASE[lapNum-1].loop;
+  const targetSlot=document.getElementById('slTarget').value;
+  if(!targetSlot) return;
+  const targetName=effName(targetSlot);
+  const theirLeg=runnerLegs(targetSlot).find(b=>b.loop===color);
+  const isDone=theirLeg&&state.doneLaps[theirLeg.lap];
+  let html=`<strong>Lap ${lapNum} (${color})</strong>: ${curName} → <strong>${targetName}</strong><br>`;
+  html+=`<strong>Lap ${theirLeg?.lap} (${color})</strong>: ${targetName} → <strong>${curName}</strong>`;
+  if(isDone) html+=`<br><span class="conflict">⚠ Lap ${theirLeg.lap} already completed!</span>`;
+  document.getElementById('slPreview').innerHTML=html;
+}
+
+async function confirmSingleLegSwap(){
+  const lapNum=+document.getElementById('slLap').value;
+  const targetSlot=document.getElementById('slTarget').value;
+  if(!lapNum||!targetSlot) return;
+  const curSlot=effSlot(lapNum);
+  const color=BASE[lapNum-1].loop;
+  const theirLeg=runnerLegs(targetSlot).find(b=>b.loop===color);
+  if(!theirLeg) return;
+  state.legMap=state.legMap||{};
+  state.legMap[lapNum]=targetSlot;
+  state.legMap[theirLeg.lap]=curSlot;
+  const curName=effName(curSlot), targetName=effName(targetSlot);
+  logSwap(`Lap ${lapNum}→${targetName} / Lap ${theirLeg.lap}→${curName}`);
+  render();
+  const sched=buildSched();
+  document.getElementById('slLap').innerHTML=sched.filter(s=>!s.isDone)
+    .map(s=>`<option value="${s.lap}">${s.lap}. ${s.runner} · ${cap(s.loop)}</option>`).join('');
+  populateSLTargets(); updateSLPreview(); renderSwapLog();
+  showToast(`✓ Lap ${lapNum} reassigned to ${targetName}`);
+  await saveState();
+}
+
+function logSwap(desc){
+  state.swapLog=state.swapLog||[];
+  const ts=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  state.swapLog.push({desc,ts,snapshot:{legMap:{...state.legMap},nameMap:{...state.nameMap}}});
+}
+
+function renderSwapLog(){
+  const log=state.swapLog||[];
+  const wrap=document.getElementById('swapLogWrap');
+  if(!log.length){wrap.innerHTML='';return;}
+  wrap.innerHTML=`<div class="section-divider"></div><div class="section-title">Swap History</div>
+  <div class="swap-log-wrap">${log.slice().reverse().map((s,ri)=>{
+    const idx=log.length-1-ri;
+    return`<div class="swap-log-item">
+      <div class="swap-log-desc"><strong>${s.desc}</strong><br>${s.ts}</div>
+      <button class="undo-btn" onclick="undoSwap(${idx})">Undo</button>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+async function undoSwap(idx){
+  if(idx===0){state.legMap={};state.nameMap={};}
+  else{const p=state.swapLog[idx-1].snapshot;state.legMap={...p.legMap};state.nameMap={...p.nameMap};}
+  state.swapLog.splice(idx,1);
+  render(); renderSwapLog(); refreshWSSelects();
+  await saveState();
+}
+
+function refreshWSSelects(){
+  const opts=ALL_SLOTS.map(slot=>{const n=effName(slot);return`<option value="${slot}">${n!==slot?`${n} (${slot})`:n}</option>`;}).join('');
+  ['wsA','wsB'].forEach(id=>document.getElementById(id).innerHTML=opts);
+  document.getElementById('wsB').selectedIndex=1;
+  updateWSPreview();
+}
+
+// ══ UTILS ══
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['runners','schedule'][i]===name));
+  document.querySelectorAll('.tab-content').forEach(tc=>tc.classList.toggle('active',tc.id==='tab-'+name));
+}
+function openOverlay(id){ document.getElementById(id).classList.add('open'); }
+function closeOverlay(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(o=>{
+  o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('open'); });
+});
+
+// ══ INIT ══
+loadCreds();
+if(binId&&apiKey){ launch(); doPull(); }
+else { document.getElementById('setup').style.display='flex'; }
+</script>
+</body>
+</html>
