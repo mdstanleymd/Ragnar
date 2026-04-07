@@ -281,21 +281,20 @@ input.err { border-color: var(--red); }
   <div class="setup-steps">
     Connect to <strong>JSONBin.io</strong> for live team sync.<br><br>
     1. Go to <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> → free account<br>
-    2. Create Bin → paste <strong>{}</strong> → save<br>
+    2. Create Bin → paste the starter JSON → save<br>
     3. Copy the <strong>Bin ID</strong> from the URL<br>
-    4. Copy your <strong>Access Key</strong> from API Keys
+    4. Copy your <strong>X-Master-Key</strong> from API Keys
   </div>
   <div>
     <label>Bin ID</label>
     <input type="text" id="setupBinId" placeholder="64a1f3b7..." autocomplete="off">
   </div>
   <div>
-    <label>Access Key</label>
+    <label>Master Key</label>
     <input type="password" id="setupApiKey" placeholder="$2a$10$..." autocomplete="off">
   </div>
   <div class="setup-err" id="setupErr"></div>
   <button class="btn btn-brand" onclick="saveSetup()">Connect & Start →</button>
-  <button class="btn btn-ghost" onclick="launchReadOnly()">View Only</button>
 </div>
 
 <!-- ══ APP ══ -->
@@ -307,6 +306,7 @@ input.err { border-color: var(--red); }
     <span class="admin-bar-label">⚙ Admin Mode</span>
     <button class="btn btn-admin btn-xs" onclick="openSwapModal()">Swap Runners</button>
     <button class="btn btn-admin btn-xs" onclick="openEditTimeModal()">Edit Time</button>
+    <button class="btn btn-green btn-xs" onclick="copyShareURL()">Copy Team URL</button>
     <button class="btn btn-ghost btn-xs" onclick="lockAdmin()">Lock</button>
   </div>
 
@@ -526,7 +526,28 @@ const BASE = [
 const ALL_SLOTS = ["Chris","Matt","Courtney","Savannah","Chase","Sydney","Grant","Caroline"];
 
 // ══ STATE ══
-let binId='', apiKey='', readOnly=false, adminMode=false;
+let binId='', apiKey='', adminMode=false;
+
+// ══ CREDENTIALS — stored in localStorage (owner) or URL hash (teammates) ══
+function loadCreds(){
+  // Check URL hash first (teammate share link)
+  const hash = location.hash.slice(1);
+  if(hash){
+    try{
+      const cfg = JSON.parse(atob(hash));
+      if(cfg.b && cfg.k){ binId=cfg.b; apiKey=cfg.k; return; }
+    }catch(e){}
+  }
+  // Fall back to localStorage (owner's device)
+  binId  = localStorage.getItem('rdrBinId')  || '';
+  apiKey = localStorage.getItem('rdrApiKey') || '';
+}
+
+function buildShareURL(){
+  // Encode credentials into URL hash so teammates auto-connect
+  const cfg = btoa(JSON.stringify({b:binId,k:apiKey}));
+  return `${location.origin}${location.pathname}#${cfg}`;
+}
 let pollTimer=null;
 let pendingMarkLap=null, pendingUnmarkLap=null;
 let state = {doneLaps:{}, nameMap:{}, legMap:{}, swapLog:[]};
@@ -577,19 +598,21 @@ async function saveSetup(){
     localStorage.setItem('rdrBinId',bid);
     localStorage.setItem('rdrApiKey',key);
     binId=bid; apiKey=key;
+    // Set hash so this browser also benefits from URL-based auth
+    const cfg = btoa(JSON.stringify({b:binId,k:apiKey}));
+    history.replaceState(null,'',`#${cfg}`);
     launch();
   } catch(e){ err.textContent=`Connection failed: ${e.message}`; err.classList.add('show'); }
 }
 
-function launchReadOnly(){ readOnly=true; launch(); }
+function launchReadOnly(){ launch(); }
 
 function launch(){
   document.getElementById('setup').classList.remove('show');
   document.getElementById('setup').style.display='none';
   document.getElementById('app').style.display='block';
   render();
-  if(!readOnly){ startPoll(); }
-  else { setSyncStatus('err'); }
+  startPoll();
 }
 
 // ══ SYNC ══
@@ -774,7 +797,6 @@ function goToMarkStep2(){
 }
 function backToMarkStep1(){ closeOverlay('markStep2'); openOverlay('markStep1'); }
 async function confirmMark(){
-  if(readOnly){alert('View-only mode.');return;}
   state.doneLaps[pendingMarkLap]={absMins:nowAbs()};
   pendingMarkLap=null;
   closeOverlay('markStep2');
@@ -793,7 +815,6 @@ function startUnmarkFlow(lapNum){
   openOverlay('unmarkModal');
 }
 async function confirmUnmark(){
-  if(readOnly){alert('View-only mode.');return;}
   delete state.doneLaps[pendingUnmarkLap];
   pendingUnmarkLap=null;
   closeOverlay('unmarkModal');
@@ -1017,6 +1038,15 @@ function closeOverlay(id){ document.getElementById(id).classList.remove('open');
 document.querySelectorAll('.overlay').forEach(o=>{
   o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('open'); });
 });
+
+function copyShareURL(){
+  const url = buildShareURL();
+  navigator.clipboard.writeText(url).then(()=>{
+    showToast('✓ Team URL copied!','#22c55e');
+  }).catch(()=>{
+    prompt('Copy this URL and share with your team:',url);
+  });
+}
 
 // ══ INIT ══
 loadCreds();
