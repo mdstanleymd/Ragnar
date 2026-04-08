@@ -180,6 +180,8 @@ input.err { border-color: var(--red); }
 .tabs { display: flex; border-bottom: 2px solid var(--border); background: var(--card); }
 .tab { flex: 1; background: none; border: none; color: var(--muted); font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 1rem; padding: 16px; border-bottom: 3px solid transparent; margin-bottom: -2px; cursor: pointer; transition: all .15s; }
 .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
 
 /* ── RUNNER CARDS ── */
 .runners-list { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
