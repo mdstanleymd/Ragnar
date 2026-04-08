@@ -528,24 +528,33 @@ const ALL_SLOTS = ["Chris","Matt","Courtney","Savannah","Chase","Sydney","Grant"
 // ══ STATE ══
 let binId='', apiKey='', adminMode=false;
 
-// ══ CREDENTIALS — stored in localStorage (owner) or URL hash (teammates) ══
+// ══ CREDENTIALS ══
+// Priority: 1) URL hash (share link)  2) localStorage (returning owner)  3) hardcoded defaults
+const DEFAULT_BIN = '69d482ebaaba882197d00ea9';
+const DEFAULT_KEY = '$2a$10$syoRc66fc/w/ehurDiBUXOAEvNQAOu3HlWv8DMQf2LIDmkZsPKnWW';
+
 function loadCreds(){
-  // Check URL hash first (teammate share link)
-  const hash = location.hash.slice(1);
-  if(hash){
-    try{
+  // 1. URL hash — share link with encoded credentials
+  try {
+    const hash = location.hash.slice(1);
+    if(hash){
       const cfg = JSON.parse(atob(hash));
       if(cfg.b && cfg.k){ binId=cfg.b; apiKey=cfg.k; return; }
-    }catch(e){}
-  }
-  // Fall back to localStorage (owner's device)
-  binId  = localStorage.getItem('rdrBinId')  || '';
-  apiKey = localStorage.getItem('rdrApiKey') || '';
+    }
+  } catch(e){}
+
+  // 2. localStorage — owner's saved credentials
+  const savedBin = localStorage.getItem('rdrBinId');
+  const savedKey = localStorage.getItem('rdrApiKey');
+  if(savedBin && savedKey){ binId=savedBin; apiKey=savedKey; return; }
+
+  // 3. Hardcoded defaults — teammates who open the base URL get these automatically
+  binId  = DEFAULT_BIN;
+  apiKey = DEFAULT_KEY;
 }
 
 function buildShareURL(){
-  // Encode credentials into URL hash so teammates auto-connect
-  const cfg = btoa(JSON.stringify({b:binId,k:apiKey}));
+  const cfg = btoa(JSON.stringify({b:binId, k:apiKey}));
   return `${location.origin}${location.pathname}#${cfg}`;
 }
 let pollTimer=null;
@@ -575,11 +584,6 @@ function runnerLegs(slot){
 }
 
 // ══ SETUP ══
-function loadCreds(){
-  binId  = localStorage.getItem('rdrBinId')  || '';
-  apiKey = localStorage.getItem('rdrApiKey') || '';
-}
-
 async function saveSetup(){
   const bid = document.getElementById('setupBinId').value.trim();
   const key = document.getElementById('setupApiKey').value.trim();
@@ -595,17 +599,14 @@ async function saveSetup(){
     } else {
       state = {doneLaps:{},nameMap:{},legMap:{},swapLog:[],...data.record};
     }
-    localStorage.setItem('rdrBinId',bid);
-    localStorage.setItem('rdrApiKey',key);
+    // Save to localStorage and update URL hash
+    localStorage.setItem('rdrBinId', bid);
+    localStorage.setItem('rdrApiKey', key);
     binId=bid; apiKey=key;
-    // Set hash so this browser also benefits from URL-based auth
-    const cfg = btoa(JSON.stringify({b:binId,k:apiKey}));
-    history.replaceState(null,'',`#${cfg}`);
+    history.replaceState(null,'', '#' + btoa(JSON.stringify({b:binId,k:apiKey})));
     launch();
   } catch(e){ err.textContent=`Connection failed: ${e.message}`; err.classList.add('show'); }
 }
-
-function launchReadOnly(){ launch(); }
 
 function launch(){
   document.getElementById('setup').classList.remove('show');
@@ -1050,8 +1051,9 @@ function copyShareURL(){
 
 // ══ INIT ══
 loadCreds();
-if(binId&&apiKey){ launch(); doPull(); }
-else { document.getElementById('setup').style.display='flex'; }
+// Always have credentials (hardcoded defaults or saved/shared) — go straight to app
+launch();
+doPull();
 </script>
 </body>
 </html>
